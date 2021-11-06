@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "lib": ["ES2019"],
+        "target": "ES6",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "baseUrl": ".",
+        "paths": {
+            "*": ["*"]
+        }
+    }
+}

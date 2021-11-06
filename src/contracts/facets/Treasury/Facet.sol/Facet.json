@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Facet",
+  "sourceName": "contracts/facets/Treasury/Facet.sol",
+  "abi": [],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea264697066735822122036f2f1ba5b717454220b03a2836a8a0f8cce5f0064b040fa21ad016c2c48b9a064736f6c63430007050033",
+  "deployedBytecode": "0x6080604052600080fdfea264697066735822122036f2f1ba5b717454220b03a2836a8a0f8cce5f0064b040fa21ad016c2c48b9a064736f6c63430007050033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

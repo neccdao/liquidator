@@ -1,0 +1,52 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "PancakePair",
+  "sourceName": "contracts/amm/PancakePair.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getReserves",
+      "outputs": [
+        {
+          "internalType": "uint112",
+          "name": "_reserve0",
+          "type": "uint112"
+        },
+        {
+          "internalType": "uint112",
+          "name": "_reserve1",
+          "type": "uint112"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_blockTimestampLast",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "balance0",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "balance1",
+          "type": "uint256"
+        }
+      ],
+      "name": "setReserves",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b506101e5806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80630902f1ac1461003b5780638392b8c01461008d575b600080fd5b6100436100c5565b60405180846dffffffffffffffffffffffffffff168152602001836dffffffffffffffffffffffffffff1681526020018263ffffffff168152602001935050505060405180910390f35b6100c3600480360360408110156100a357600080fd5b810190808035906020019092919080359060200190929190505050610121565b005b60008060008060009054906101000a90046dffffffffffffffffffffffffffff1692506000600e9054906101000a90046dffffffffffffffffffffffffffff1691506000601c9054906101000a900463ffffffff169050909192565b816000806101000a8154816dffffffffffffffffffffffffffff02191690836dffffffffffffffffffffffffffff160217905550806000600e6101000a8154816dffffffffffffffffffffffffffff02191690836dffffffffffffffffffffffffffff160217905550426000601c6101000a81548163ffffffff021916908363ffffffff160217905550505056fea26469706673582212205faced8f2dcb192cde3ec5791a4829e076f964ada9e55a273cfb1bd62ff89b1064736f6c63430007050033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100365760003560e01c80630902f1ac1461003b5780638392b8c01461008d575b600080fd5b6100436100c5565b60405180846dffffffffffffffffffffffffffff168152602001836dffffffffffffffffffffffffffff1681526020018263ffffffff168152602001935050505060405180910390f35b6100c3600480360360408110156100a357600080fd5b810190808035906020019092919080359060200190929190505050610121565b005b60008060008060009054906101000a90046dffffffffffffffffffffffffffff1692506000600e9054906101000a90046dffffffffffffffffffffffffffff1691506000601c9054906101000a900463ffffffff169050909192565b816000806101000a8154816dffffffffffffffffffffffffffff02191690836dffffffffffffffffffffffffffff160217905550806000600e6101000a8154816dffffffffffffffffffffffffffff02191690836dffffffffffffffffffffffffffff160217905550426000601c6101000a81548163ffffffff021916908363ffffffff160217905550505056fea26469706673582212205faced8f2dcb192cde3ec5791a4829e076f964ada9e55a273cfb1bd62ff89b1064736f6c63430007050033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
