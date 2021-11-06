@@ -28,6 +28,9 @@ export default async function (req: VercelRequest, res: VercelResponse) {
             readerJSON.abi,
             signer
         );
+        //
+        const balance = await provider.getBalance(signer.address);
+        console.log("Liquidator Balance: " + balance?.toString());
 
         // weiroll
         const planner = new weiroll.Planner();
