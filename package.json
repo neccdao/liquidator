@@ -23,6 +23,9 @@
     },
     "dependencies": {
         "@ethersproject/providers": "^5.4.1",
+        "@sentry/nextjs": "^6.15.0",
+        "@sentry/node": "^6.15.0",
+        "@sentry/tracing": "^6.15.0",
         "@weiroll/weiroll.js": "^0.3.0",
         "ethers": "^5.4.4"
     }
