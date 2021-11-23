@@ -6,8 +6,16 @@ import readerJSON from "../src/contracts/facets/Reader/ReaderFacet.sol/ReaderFac
 import vaultJSON from "../src/contracts/facets/Vault/VaultFacet.sol/VaultFacet.json";
 import testableVMJSON from "../src/contracts/weiroll/TestableVM.sol/TestableVM.json";
 import getPositionQuery from "../src/lib/getPositionQuery";
+import * as Sentry from "@sentry/node";
+import * as Tracing from "@sentry/tracing";
+import { withSentry } from "@sentry/nextjs";
 
-export default async function (req: VercelRequest, res: VercelResponse) {
+Sentry.init({
+    dsn: "https://6bbe3c43320d4ccc99048e2e479983a8@o1076269.ingest.sentry.io/6077830",
+    tracesSampleRate: 1.0,
+});
+
+const handler = async function (req: VercelRequest, res: VercelResponse) {
     // const { name = "World" } = req.query;
     // res.send(`Hello ${name}!`);
     try {
@@ -203,4 +211,6 @@ export default async function (req: VercelRequest, res: VercelResponse) {
         console.error(err);
         res.status(500).send(err);
     }
-}
+};
+
+export default withSentry(handler);
