@@ -48,19 +48,18 @@ const handler = async function () {
 
         const tokenBalances = await Promise.all(tokenBalancePromises);
         console.log("Token Balances: ");
-        console.log(
-            tokens.map((token, index) => {
-                if (tokenBalances[index]) {
-                    return {
-                        [token.address]: tokenBalances[index]?.toString(),
-                    };
-                } else {
-                    return {
-                        [ethers.constants.AddressZero]: balance?.toString(),
-                    };
-                }
-            })
-        );
+        const tokenBalancesMap = tokens.map((token, index) => {
+            if (tokenBalances[index]) {
+                return {
+                    [token.address]: tokenBalances[index]?.toString(),
+                };
+            } else {
+                return {
+                    [ethers.constants.AddressZero]: balance?.toString(),
+                };
+            }
+        });
+        console.log(JSON.stringify(tokenBalancesMap));
 
         // weiroll
         const planner = new weiroll.Planner();

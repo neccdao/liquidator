@@ -17,7 +17,7 @@ const main = async () => {
         console.log(
             "EXCHANGE_DIAMOND_ADDRESS: " + process.env.EXCHANGE_DIAMOND_ADDRESS
         );
-        console.log({ tokens });
+        console.log(JSON.stringify({ tokens }));
 
         const intervalPeriod = process.env.INTERVAL_PERIOD || 1000 * 60 * 5; // 5 minutes
         console.log({ intervalPeriod });
