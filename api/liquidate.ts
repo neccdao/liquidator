@@ -1,4 +1,3 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
 import { ethers } from "ethers";
 const weiroll = require("@weiroll/weiroll.js");
 import tokens from "../src/lib/tokens";
@@ -6,19 +5,10 @@ import readerJSON from "../src/contracts/facets/Reader/ReaderFacet.sol/ReaderFac
 import vaultJSON from "../src/contracts/facets/Vault/VaultFacet.sol/VaultFacet.json";
 import testableVMJSON from "../src/contracts/weiroll/TestableVM.sol/TestableVM.json";
 import getPositionQuery from "../src/lib/getPositionQuery";
-import * as Sentry from "@sentry/node";
-import * as Tracing from "@sentry/tracing";
-import { withSentry } from "@sentry/nextjs";
 
-Sentry.init({
-    dsn: "https://6bbe3c43320d4ccc99048e2e479983a8@o1076269.ingest.sentry.io/6077830",
-    tracesSampleRate: 1.0,
-});
-
-const handler = async function (req: VercelRequest, res: VercelResponse) {
-    // const { name = "World" } = req.query;
-    // res.send(`Hello ${name}!`);
+const handler = async function () {
     try {
+        console.info("*** Liquidate handler ***");
         const provider = new ethers.providers.JsonRpcBatchProvider(
             process.env.RPC_URL
         );
@@ -38,7 +28,7 @@ const handler = async function (req: VercelRequest, res: VercelResponse) {
         );
         //
         const balance = await provider.getBalance(signer.address);
-        console.log("Liquidator Balance: " + balance?.toString());
+        console.info("Liquidator Balance: " + balance?.toString());
 
         // weiroll
         const planner = new weiroll.Planner();
@@ -49,11 +39,13 @@ const handler = async function (req: VercelRequest, res: VercelResponse) {
         );
         const wrVault = weiroll.Contract.createContract(vault);
 
+        const fromBlock = process.env.FROM_BLOCK
+            ? Number(process.env.FROM_BLOCK)
+            : "latest";
         const ipEventFilter = vault.filters.IncreasePosition();
-
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            process.env.FROM_BLOCK ? Number(process.env.FROM_BLOCK) : "latest",
+            fromBlock,
             "latest"
         );
 
@@ -77,8 +69,7 @@ const handler = async function (req: VercelRequest, res: VercelResponse) {
         });
 
         const uniqueAddressPositions = await Promise.all(positionPromises);
-        // console.log({ positionQuery });
-        console.log({
+        console.info({
             uniqueAddressPositionsLength: uniqueAddressPositions.length,
         });
         // console.log(uniqueAddressPositions?.[0]);
@@ -174,7 +165,7 @@ const handler = async function (req: VercelRequest, res: VercelResponse) {
 
         if (uniqueAddressesPositionsToLiquidate.length === 0) {
             console.info("OK, nothing liquidated.");
-            res.send("OK, nothing liquidated.");
+            return;
         }
 
         uniqueAddressesPositionsToLiquidate.map((liquidablePosition) => {
@@ -206,11 +197,10 @@ const handler = async function (req: VercelRequest, res: VercelResponse) {
         console.info("blockNumber: ", blockNumber);
         console.info("block.timestamp: ", block.timestamp);
         console.info("transactionHash: ", transactionHash);
-        res.send("OK, " + transactionHash);
     } catch (err) {
+        console.error("Error occured in liquidate.ts:handler");
         console.error(err);
-        res.status(500).send(err);
     }
 };
 
-export default withSentry(handler);
+export default handler;

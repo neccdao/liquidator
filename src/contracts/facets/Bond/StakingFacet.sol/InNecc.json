@@ -105,11 +105,11 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "gons",
+          "name": "_amount",
           "type": "uint256"
         }
       ],
-      "name": "balanceForGons",
+      "name": "balanceFrom",
       "outputs": [
         {
           "internalType": "uint256",
@@ -124,7 +124,7 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "who",
+          "name": "account",
           "type": "address"
         }
       ],
@@ -140,8 +140,14 @@
       "type": "function"
     },
     {
-      "inputs": [],
-      "name": "circulatingSupply",
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "balanceTo",
       "outputs": [
         {
           "internalType": "uint256",
@@ -155,20 +161,19 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "gonsForBalance",
-      "outputs": [
+          "internalType": "address",
+          "name": "_from",
+          "type": "address"
+        },
         {
           "internalType": "uint256",
-          "name": "",
+          "name": "_amount",
           "type": "uint256"
         }
       ],
-      "stateMutability": "view",
+      "name": "burn",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -187,24 +192,18 @@
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "neccProfit_",
-          "type": "uint256"
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
         },
         {
           "internalType": "uint256",
-          "name": "epoch_",
+          "name": "_amount",
           "type": "uint256"
         }
       ],
-      "name": "rebase",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
+      "name": "mint",
+      "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
     },

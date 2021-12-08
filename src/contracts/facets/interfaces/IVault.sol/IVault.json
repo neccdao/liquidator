@@ -58,7 +58,7 @@
           "type": "address"
         }
       ],
-      "name": "buyNUSD",
+      "name": "buyNDOL",
       "outputs": [
         {
           "internalType": "uint256",
@@ -361,7 +361,7 @@
         },
         {
           "internalType": "uint256",
-          "name": "_nusdAmount",
+          "name": "_ndolAmount",
           "type": "uint256"
         }
       ],
@@ -474,7 +474,7 @@
           "type": "address"
         }
       ],
-      "name": "nusdAmounts",
+      "name": "ndolAmounts",
       "outputs": [
         {
           "internalType": "uint256",
@@ -549,7 +549,7 @@
           "type": "address"
         }
       ],
-      "name": "sellNUSD",
+      "name": "sellNDOL",
       "outputs": [
         {
           "internalType": "uint256",
@@ -600,16 +600,16 @@
       "inputs": [
         {
           "internalType": "uint256",
-          "name": "_maxNUSDBatchSize",
+          "name": "_maxNDOLBatchSize",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "_maxNUSDBuffer",
+          "name": "_maxNDOLBuffer",
           "type": "uint256"
         }
       ],
-      "name": "setMaxNUSD",
+      "name": "setMaxNDOL",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

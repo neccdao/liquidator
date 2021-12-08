@@ -1,3 +1,4 @@
+require("dotenv").config();
 import { ethers } from "ethers";
 
 const tokens = [
@@ -21,12 +22,12 @@ const tokens = [
         isWrapped: true,
     },
 
-    process.env.WNEAR_ADDRESS && {
-        name: "Wrapped NEAR",
-        symbol: "wNEAR",
-        decimals: 24,
-        address: process.env.WNEAR_ADDRESS,
-    },
+    // process.env.WNEAR_ADDRESS && {
+    //     name: "Wrapped NEAR",
+    //     symbol: "wNEAR",
+    //     decimals: 24,
+    //     address: process.env.WNEAR_ADDRESS,
+    // },
 ];
 
 export default tokens;
