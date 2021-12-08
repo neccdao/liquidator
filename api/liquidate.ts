@@ -4,6 +4,7 @@ import tokens from "../src/lib/tokens";
 import readerJSON from "../src/contracts/facets/Reader/ReaderFacet.sol/ReaderFacet.json";
 import vaultJSON from "../src/contracts/facets/Vault/VaultFacet.sol/VaultFacet.json";
 import testableVMJSON from "../src/contracts/weiroll/TestableVM.sol/TestableVM.json";
+import TokenJSON from "../src/contracts/tokens/Token.sol/Token.json";
 import getPositionQuery from "../src/lib/getPositionQuery";
 
 const handler = async function () {
@@ -26,9 +27,40 @@ const handler = async function () {
             readerJSON.abi,
             signer
         );
+        const token = new ethers.Contract(
+            process.env.EXCHANGE_DIAMOND_ADDRESS,
+            TokenJSON.abi,
+            signer
+        );
         //
         const balance = await provider.getBalance(signer.address);
-        console.info("Liquidator Balance: " + balance?.toString());
+        const tokenBalancePromises = tokens.map(async (token) => {
+            if (token.address === ethers.constants.AddressZero) {
+                return;
+            }
+            const tokenInstance = new ethers.Contract(
+                token.address,
+                TokenJSON.abi,
+                signer
+            );
+            return await tokenInstance.balanceOf(signer.address);
+        });
+
+        const tokenBalances = await Promise.all(tokenBalancePromises);
+        console.log("Token Balances: ");
+        console.log(
+            tokens.map((token, index) => {
+                if (tokenBalances[index]) {
+                    return {
+                        [token.address]: tokenBalances[index]?.toString(),
+                    };
+                } else {
+                    return {
+                        [ethers.constants.AddressZero]: balance?.toString(),
+                    };
+                }
+            })
+        );
 
         // weiroll
         const planner = new weiroll.Planner();

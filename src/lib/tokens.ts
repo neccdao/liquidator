@@ -2,7 +2,7 @@ require("dotenv").config();
 import { ethers } from "ethers";
 
 const tokens = [
-    {
+    process.env.BTC_ADDRESS && {
         name: "Bitcoin (WBTC)",
         symbol: "BTC",
         decimals: 8,
@@ -14,7 +14,7 @@ const tokens = [
         decimals: 18,
         address: ethers.constants.AddressZero,
     },
-    {
+    process.env.WETH_ADDRESS && {
         name: "Wrapped Ethereum",
         symbol: "WETH",
         decimals: 18,

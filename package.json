@@ -1,9 +1,12 @@
 {
     "name": "necc-liquidator",
     "version": "1.0.0",
-    "main": "./api/liquidate.js",
+    "main": "./index.ts",
     "author": "Eric Juta",
     "license": "MIT",
+    "engines": {
+        "node": ">=16.0.0"
+    },
     "scripts": {
         "prepare": "husky install",
         "start": "ts-node ./index.ts"
