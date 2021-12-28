@@ -80,7 +80,7 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            currentBlock - 90000,
+            currentBlock - 80000,
             "latest"
         );
 
@@ -96,8 +96,8 @@ const handler = async function () {
 
         await from(uniqueAddresses)
             .pipe(
-                bufferCount(10),
-                concatMap((txn) => of(txn).pipe(delay(2000))),
+                bufferCount(1),
+                concatMap((txn) => of(txn).pipe(delay(1500))),
                 tap(async (chunk) => {
                     try {
                         const positionQuery = getPositionQuery(tokens);
@@ -270,6 +270,8 @@ const handler = async function () {
                 })
             )
             .toPromise();
+
+        console.info("*** DONE CHUNKS ***");
     } catch (err) {
         console.error("Error occured in liquidate.ts:handler");
         console.error(err);

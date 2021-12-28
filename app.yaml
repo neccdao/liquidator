@@ -1,4 +1,4 @@
-service: chunk-liquidator
+service: per-chunk-liquidator
 runtime: nodejs
 
 env: flex
