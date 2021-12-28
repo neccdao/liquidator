@@ -6,6 +6,7 @@ import vaultJSON from "../src/contracts/facets/Vault/VaultFacet.sol/VaultFacet.j
 import testableVMJSON from "../src/contracts/weiroll/TestableVM.sol/TestableVM.json";
 import TokenJSON from "../src/contracts/tokens/Token.sol/Token.json";
 import getPositionQuery from "../src/lib/getPositionQuery";
+import { bufferCount, catchError, concatMap, delay, from, of, tap } from "rxjs";
 
 const handler = async function () {
     try {
@@ -76,7 +77,8 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            fromBlock,
+            5450_0000,
+            // 56164358,
             "latest"
         );
 
@@ -90,149 +92,196 @@ const handler = async function () {
 
         console.info("uniqueAddresses.length: " + uniqueAddresses.length);
 
-        const positionQuery = getPositionQuery(tokens);
-        const positionPromises = uniqueAddresses.map(async (_account) => {
-            return await reader.getPositions(
-                vault.address,
-                _account,
-                positionQuery.collateralTokens,
-                positionQuery.indexTokens,
-                positionQuery.isLong
-            );
-        });
+        await from(uniqueAddresses)
+            .pipe(
+                bufferCount(10),
+                concatMap((txn) => of(txn).pipe(delay(13000))),
+                tap(async (h) => {
+                    const positionQuery = getPositionQuery(tokens);
+                    const positionPromises = h.map(async (_account) => {
+                        return await reader.getPositions(
+                            vault.address,
+                            _account,
+                            positionQuery.collateralTokens,
+                            positionQuery.indexTokens,
+                            positionQuery.isLong
+                        );
+                    });
 
-        const uniqueAddressPositions = await Promise.all(positionPromises);
-        console.info({
-            uniqueAddressPositionsLength: uniqueAddressPositions.length,
-        });
-        // console.log(uniqueAddressPositions?.[0]);
-
-        // [
-        // uniqueAddress1: [position1 properties], ...[positionN properties],
-        // ...uniqueAddressN: [..., ...]
-        // ]
-        const positionPropsLength = 9;
-        const uniqueAddressPositionsToValidate = uniqueAddressPositions.map(
-            (positionsForAddress, uniqueAddressIndex) => {
-                const validateLiquidationPositionsForUniqueAddress = [];
-                for (
-                    let i = 0;
-                    i < positionQuery.collateralTokens.length;
-                    i++
-                ) {
-                    // no position size so ignore
-                    if (
-                        positionsForAddress[
-                            positionPropsLength * i
-                        ]?.toString() == "0"
-                    ) {
-                        continue;
-                    }
-                    const account = uniqueAddresses[uniqueAddressIndex];
-                    const collateralToken = positionQuery.collateralTokens[i];
-                    const indexToken = positionQuery.indexTokens[i];
-                    const isLong = positionQuery.isLong[i];
-                    const isRaise = false;
-
-                    const positionToValidateForLiquidation = [
-                        account,
-                        collateralToken,
-                        indexToken,
-                        isLong,
-                        isRaise,
-                    ];
-
-                    validateLiquidationPositionsForUniqueAddress.push(
-                        positionToValidateForLiquidation
+                    const uniqueAddressPositions = await Promise.all(
+                        positionPromises
                     );
-                }
+                    console.info({
+                        uniqueAddressPositionsLength:
+                            uniqueAddressPositions.length,
+                    });
+                    // console.log(uniqueAddressPositions?.[0]);
 
-                return validateLiquidationPositionsForUniqueAddress;
-            }
-        );
-        /*
+                    // [
+                    // uniqueAddress1: [position1 properties], ...[positionN properties],
+                    // ...uniqueAddressN: [..., ...]
+                    // ]
+                    const positionPropsLength = 9;
+                    const uniqueAddressPositionsToValidate =
+                        uniqueAddressPositions.map(
+                            (positionsForAddress, uniqueAddressIndex) => {
+                                const validateLiquidationPositionsForUniqueAddress =
+                                    [];
+                                for (
+                                    let i = 0;
+                                    i < positionQuery.collateralTokens.length;
+                                    i++
+                                ) {
+                                    // no position size so ignore
+                                    if (
+                                        positionsForAddress[
+                                            positionPropsLength * i
+                                        ]?.toString() == "0"
+                                    ) {
+                                        continue;
+                                    }
+                                    const account =
+                                        uniqueAddresses[uniqueAddressIndex];
+                                    const collateralToken =
+                                        positionQuery.collateralTokens[i];
+                                    const indexToken =
+                                        positionQuery.indexTokens[i];
+                                    const isLong = positionQuery.isLong[i];
+                                    const isRaise = false;
+
+                                    const positionToValidateForLiquidation = [
+                                        account,
+                                        collateralToken,
+                                        indexToken,
+                                        isLong,
+                                        isRaise,
+                                    ];
+
+                                    validateLiquidationPositionsForUniqueAddress.push(
+                                        positionToValidateForLiquidation
+                                    );
+                                }
+
+                                return validateLiquidationPositionsForUniqueAddress;
+                            }
+                        );
+                    /*
     uniqueAddressPositionsToValidate ===
     [
       address 1 => [[ position1 ], ...[]],
       address n => [[ position1 ], ...[]],
     ]
     */
-        const uniqueAddressPositionsToValidatePromises =
-            uniqueAddressPositionsToValidate
-                .map(async (uniqueAddressPositions, uniqueAddressIndex) => {
-                    const validationPromises = uniqueAddressPositions.map(
-                        async (positionToValidate) => {
-                            const [liquidationState] =
-                                await vault.validateLiquidation(
-                                    ...positionToValidate
-                                );
 
-                            if (liquidationState.gt(0)) {
-                                const result = await positionToValidate;
-                                return result;
-                            }
+                    const uniqueAddressPositionsToValidatePromises =
+                        uniqueAddressPositionsToValidate
+                            .map(
+                                async (
+                                    uniqueAddressPositions,
+                                    uniqueAddressIndex
+                                ) => {
+                                    const validationPromises =
+                                        uniqueAddressPositions.map(
+                                            async (positionToValidate) => {
+                                                try {
+                                                    const [liquidationState] =
+                                                        await vault.validateLiquidation(
+                                                            ...positionToValidate
+                                                        );
+
+                                                    if (
+                                                        liquidationState.gt(0)
+                                                    ) {
+                                                        console.log({
+                                                            liquidationState:
+                                                                liquidationState?.toString(),
+                                                        });
+                                                        const result =
+                                                            await positionToValidate;
+                                                        return result;
+                                                    }
+                                                } catch (err) {
+                                                    return;
+                                                }
+                                            }
+                                        );
+
+                                    const validationResults = await Promise.all(
+                                        validationPromises
+                                    );
+                                    return validationResults;
+                                }
+                            )
+                            .flat();
+
+                    const uniqueAddressesPositionsToLiquidateUnflattened =
+                        await Promise.all(
+                            uniqueAddressPositionsToValidatePromises
+                        );
+
+                    const uniqueAddressesPositionsToLiquidate =
+                        uniqueAddressesPositionsToLiquidateUnflattened
+                            .flat()
+                            .filter((x) => !!x);
+
+                    // console.log({
+                    //     uniqueAddressesPositionsToLiquidateUnflattened,
+                    //     uniqueAddressPositionsToValidatePromises,
+                    //     uniqueAddressPositionsToValidate,
+                    //     uniqueAddressesPositionsToLiquidate,
+                    // });
+
+                    if (uniqueAddressesPositionsToLiquidate.length === 0) {
+                        console.info("OK, nothing liquidated.");
+                        return;
+                    }
+
+                    const liquidateMe = uniqueAddressesPositionsToLiquidate.map(
+                        async (liquidablePosition) => {
+                            // remove isRaise boolean since not needed in liquidatePosition
+                            liquidablePosition.pop();
+                            planner.add(
+                                wrVault.liquidatePosition(
+                                    ...liquidablePosition,
+                                    process.env.LIQUIDATOR_ADDRESS
+                                )
+                            );
+
+                            const { commands, state } = planner.plan();
+                            const tx = await testableVM.execute(
+                                commands,
+                                state
+                            );
+                            const receipt = await tx.wait();
+                            const { gasUsed, transactionHash } =
+                                await provider.getTransactionReceipt(tx.hash);
+                            console.info(
+                                uniqueAddressesPositionsToLiquidate.length +
+                                    " * liquidatePosition gas used: ",
+                                gasUsed.toString()
+                            );
+
+                            const blockNumber = await provider.getBlockNumber();
+                            const block = await provider.getBlock(blockNumber);
+                            console.info("blockNumber: ", blockNumber);
+                            console.info("block.timestamp: ", block.timestamp);
+                            console.info("transactionHash: ", transactionHash);
                         }
                     );
 
-                    const validationResults = await Promise.all(
-                        validationPromises
-                    );
-                    return validationResults;
+                    try {
+                        return await Promise.all(liquidateMe);
+                    } catch (err) {
+                        console.error(err.message);
+                    }
                 })
-                .flat();
-
-        const uniqueAddressesPositionsToLiquidateUnflattened =
-            await Promise.all(uniqueAddressPositionsToValidatePromises);
-
-        const uniqueAddressesPositionsToLiquidate =
-            uniqueAddressesPositionsToLiquidateUnflattened
-                .flat()
-                .filter((x) => !!x);
-
-        // console.log({
-        //     uniqueAddressesPositionsToLiquidateUnflattened,
-        //     uniqueAddressPositionsToValidatePromises,
-        //     uniqueAddressPositionsToValidate,
-        //     uniqueAddressesPositionsToLiquidate,
-        // });
-
-        if (uniqueAddressesPositionsToLiquidate.length === 0) {
-            console.info("OK, nothing liquidated.");
-            return;
-        }
-
-        uniqueAddressesPositionsToLiquidate.map((liquidablePosition) => {
-            // remove isRaise boolean since not needed in liquidatePosition
-            liquidablePosition.pop();
-            planner.add(
-                wrVault.liquidatePosition(
-                    ...liquidablePosition,
-                    process.env.LIQUIDATOR_ADDRESS
-                )
-            );
-        });
+            )
+            .toPromise();
 
         // Execute weiroll plan with deployed VM with user2 who is the liquidation fee receiver
-
-        const { commands, state } = planner.plan();
-        const tx = await testableVM.execute(commands, state);
-        const receipt = await tx.wait();
-        const { gasUsed, transactionHash } =
-            await provider.getTransactionReceipt(tx.hash);
-        console.info(
-            uniqueAddressesPositionsToLiquidate.length +
-                " * liquidatePosition gas used: ",
-            gasUsed.toString()
-        );
-
-        const blockNumber = await provider.getBlockNumber();
-        const block = await provider.getBlock(blockNumber);
-        console.info("blockNumber: ", blockNumber);
-        console.info("block.timestamp: ", block.timestamp);
-        console.info("transactionHash: ", transactionHash);
     } catch (err) {
         console.error("Error occured in liquidate.ts:handler");
-        console.error(err);
+        console.error(err.message);
     }
 };
 
