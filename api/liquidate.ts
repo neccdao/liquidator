@@ -88,6 +88,8 @@ const handler = async function () {
             )
             .map(({ args: { account } }) => account);
 
+        console.info("uniqueAddresses.length: " + uniqueAddresses.length);
+
         const positionQuery = getPositionQuery(tokens);
         const positionPromises = uniqueAddresses.map(async (_account) => {
             return await reader.getPositions(
