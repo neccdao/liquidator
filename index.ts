@@ -19,7 +19,7 @@ const main = async () => {
         );
         console.log(JSON.stringify({ tokens }));
 
-        const intervalPeriod = process.env.INTERVAL_PERIOD || 1000 * 60 * 5; // 5 minutes
+        const intervalPeriod = process.env.INTERVAL_PERIOD || 20000; // 20 seconds
         console.log({ intervalPeriod });
         // First invoke the handler
         await handler();
