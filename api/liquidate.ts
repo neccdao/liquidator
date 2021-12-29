@@ -70,7 +70,7 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            5300_0000,
+            5400_0000,
             // 56164358,
             "latest"
         );
@@ -87,9 +87,17 @@ const handler = async function () {
 
         await from(uniqueAddresses)
             .pipe(
-                bufferCount(20),
-                concatMap((txn) => of(txn).pipe(delay(5000))),
+                bufferCount(10),
+                concatMap((txn) => of(txn).pipe(delay(8000))),
                 tap(async (h) => {
+                    const planner = new weiroll.Planner();
+                    const testableVM = new ethers.Contract(
+                        process.env.TESTABLE_VM_ADDRESS,
+                        testableVMJSON.abi,
+                        signer
+                    );
+                    const wrVault = weiroll.Contract.createContract(vault);
+
                     const positionQuery = getPositionQuery(tokens);
                     const positionPromises = h.map(async (_account) => {
                         return await reader.getPositions(
@@ -179,9 +187,6 @@ const handler = async function () {
                                                         await vault.validateLiquidation(
                                                             ...positionToValidate
                                                         );
-                                                    console.log({
-                                                        liquidationState,
-                                                    });
 
                                                     if (
                                                         liquidationState.gt(0)
@@ -209,8 +214,6 @@ const handler = async function () {
                             uniqueAddressPositionsToValidatePromises
                         );
 
-                    console.log(uniqueAddressesPositionsToLiquidateUnflattened);
-
                     const uniqueAddressesPositionsToLiquidate =
                         uniqueAddressesPositionsToLiquidateUnflattened
                             .flat()
@@ -230,15 +233,6 @@ const handler = async function () {
 
                     const liquidateMe = uniqueAddressesPositionsToLiquidate.map(
                         async (liquidablePosition) => {
-                            const planner = new weiroll.Planner();
-                            const testableVM = new ethers.Contract(
-                                process.env.TESTABLE_VM_ADDRESS,
-                                testableVMJSON.abi,
-                                signer
-                            );
-                            const wrVault =
-                                weiroll.Contract.createContract(vault);
-
                             // remove isRaise boolean since not needed in liquidatePosition
                             liquidablePosition.pop();
                             planner.add(
