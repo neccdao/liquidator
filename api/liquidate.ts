@@ -62,13 +62,6 @@ const handler = async function () {
         console.log(JSON.stringify(tokenBalancesMap));
 
         // weiroll
-        const planner = new weiroll.Planner();
-        const testableVM = new ethers.Contract(
-            process.env.TESTABLE_VM_ADDRESS,
-            testableVMJSON.abi,
-            signer
-        );
-        const wrVault = weiroll.Contract.createContract(vault);
 
         const fromBlock = process.env.FROM_BLOCK
             ? Number(process.env.FROM_BLOCK)
@@ -76,7 +69,7 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            fromBlock,
+            56243000,
             "latest"
         );
 
@@ -201,35 +194,50 @@ const handler = async function () {
             return;
         }
 
-        uniqueAddressesPositionsToLiquidate.map((liquidablePosition) => {
-            // remove isRaise boolean since not needed in liquidatePosition
-            liquidablePosition.pop();
-            planner.add(
-                wrVault.liquidatePosition(
-                    ...liquidablePosition,
-                    process.env.LIQUIDATOR_ADDRESS
-                )
-            );
-        });
+        const x = uniqueAddressesPositionsToLiquidate.map(
+            async (liquidablePosition) => {
+                // remove isRaise boolean since not needed in liquidatePosition
+                try {
+                    const planner = new weiroll.Planner();
+                    const testableVM = new ethers.Contract(
+                        process.env.TESTABLE_VM_ADDRESS,
+                        testableVMJSON.abi,
+                        signer
+                    );
+                    const wrVault = weiroll.Contract.createContract(vault);
+                    liquidablePosition.pop();
+                    planner.add(
+                        wrVault.liquidatePosition(
+                            ...liquidablePosition,
+                            process.env.LIQUIDATOR_ADDRESS
+                        )
+                    );
 
-        // Execute weiroll plan with deployed VM with user2 who is the liquidation fee receiver
+                    const { commands, state } = planner.plan();
+                    const tx = await testableVM.execute(commands, state);
+                    const receipt = await tx.wait();
+                    const { gasUsed, transactionHash } =
+                        await provider.getTransactionReceipt(tx.hash);
+                    console.info(
+                        uniqueAddressesPositionsToLiquidate.length +
+                            " * liquidatePosition gas used: ",
+                        gasUsed.toString()
+                    );
 
-        const { commands, state } = planner.plan();
-        const tx = await testableVM.execute(commands, state);
-        const receipt = await tx.wait();
-        const { gasUsed, transactionHash } =
-            await provider.getTransactionReceipt(tx.hash);
-        console.info(
-            uniqueAddressesPositionsToLiquidate.length +
-                " * liquidatePosition gas used: ",
-            gasUsed.toString()
+                    const blockNumber = await provider.getBlockNumber();
+                    const block = await provider.getBlock(blockNumber);
+                    console.info("blockNumber: ", blockNumber);
+                    console.info("block.timestamp: ", block.timestamp);
+                    console.info("transactionHash: ", transactionHash);
+                } catch (err) {
+                    console.error(err.message);
+                }
+            }
         );
 
-        const blockNumber = await provider.getBlockNumber();
-        const block = await provider.getBlock(blockNumber);
-        console.info("blockNumber: ", blockNumber);
-        console.info("block.timestamp: ", block.timestamp);
-        console.info("transactionHash: ", transactionHash);
+        await Promise.allSettled(x);
+
+        // Execute weiroll plan with deployed VM with user2 who is the liquidation fee receiver
     } catch (err) {
         console.error("Error occured in liquidate.ts:handler");
         console.error(err);
