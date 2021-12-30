@@ -66,13 +66,6 @@ const handler = async function () {
         console.log(JSON.stringify(tokenBalancesMap));
 
         // weiroll
-        const planner = new weiroll.Planner();
-        const testableVM = new ethers.Contract(
-            process.env.TESTABLE_VM_ADDRESS,
-            testableVMJSON.abi,
-            signer
-        );
-        const wrVault = weiroll.Contract.createContract(vault);
 
         const fromBlock = process.env.FROM_BLOCK
             ? Number(process.env.FROM_BLOCK)
@@ -80,7 +73,7 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            currentBlock - 90000,
+            currentBlock - 60000,
             "latest"
         );
 
@@ -96,10 +89,17 @@ const handler = async function () {
 
         await from(uniqueAddresses)
             .pipe(
-                bufferCount(10),
-                concatMap((txn) => of(txn).pipe(delay(2000))),
+                bufferCount(15),
+                concatMap((txn) => of(txn).pipe(delay(8000))),
                 tap(async (chunk) => {
                     try {
+                        const planner = new weiroll.Planner();
+                        const testableVM = new ethers.Contract(
+                            process.env.TESTABLE_VM_ADDRESS,
+                            testableVMJSON.abi,
+                            signer
+                        );
+                        const wrVault = weiroll.Contract.createContract(vault);
                         const positionQuery = getPositionQuery(tokens);
                         const positionPromises = chunk.map(async (_account) => {
                             return await reader.getPositions(
@@ -145,7 +145,7 @@ const handler = async function () {
                                             continue;
                                         }
                                         const account =
-                                            uniqueAddresses[uniqueAddressIndex];
+                                            chunk[uniqueAddressIndex];
                                         const collateralToken =
                                             positionQuery.collateralTokens[i];
                                         const indexToken =
@@ -187,18 +187,26 @@ const handler = async function () {
                                         const validationPromises =
                                             uniqueAddressPositions.map(
                                                 async (positionToValidate) => {
-                                                    const [liquidationState] =
-                                                        await vault.validateLiquidation(
+                                                    try {
+                                                        const [
+                                                            liquidationState,
+                                                        ] = await vault.validateLiquidation(
                                                             ...positionToValidate
                                                         );
 
-                                                    if (
-                                                        liquidationState.gt(0)
-                                                    ) {
-                                                        const result =
-                                                            await positionToValidate;
-                                                        return result;
-                                                    }
+                                                        console.log({
+                                                            liquidationState,
+                                                        });
+                                                        if (
+                                                            liquidationState.gt(
+                                                                0
+                                                            )
+                                                        ) {
+                                                            const result =
+                                                                await positionToValidate;
+                                                            return result;
+                                                        }
+                                                    } catch (err) {}
                                                 }
                                             );
 
