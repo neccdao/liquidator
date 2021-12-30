@@ -66,10 +66,12 @@ const handler = async function () {
         const fromBlock = process.env.FROM_BLOCK
             ? Number(process.env.FROM_BLOCK)
             : "latest";
+        const currentBlock = await provider.getBlockNumber();
+
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            56243000,
+            currentBlock - 31500,
             "latest"
         );
 
