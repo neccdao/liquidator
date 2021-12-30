@@ -70,34 +70,25 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            5400_0000,
+            5620_0000,
             // 56164358,
             "latest"
         );
 
         const addresses = ipEvents.map((o) => o?.args?.account);
-        const uniqueAddresses = ipEvents
-            .filter(
-                ({ args: { account } }, index) =>
-                    !addresses.includes(account, index + 1)
-            )
-            .map(({ args: { account } }) => account);
+        let uniqueAddresses = ipEvents.map(({ args: { account } }) => {
+            return account;
+        });
+
+        uniqueAddresses = [...new Set(uniqueAddresses)];
 
         console.info("uniqueAddresses.length: " + uniqueAddresses.length);
 
         await from(uniqueAddresses)
             .pipe(
-                bufferCount(10),
-                concatMap((txn) => of(txn).pipe(delay(8000))),
+                bufferCount(20),
+                concatMap((txn) => of(txn).pipe(delay(9000))),
                 tap(async (h) => {
-                    const planner = new weiroll.Planner();
-                    const testableVM = new ethers.Contract(
-                        process.env.TESTABLE_VM_ADDRESS,
-                        testableVMJSON.abi,
-                        signer
-                    );
-                    const wrVault = weiroll.Contract.createContract(vault);
-
                     const positionQuery = getPositionQuery(tokens);
                     const positionPromises = h.map(async (_account) => {
                         return await reader.getPositions(
@@ -188,16 +179,18 @@ const handler = async function () {
                                                             ...positionToValidate
                                                         );
 
+                                                    console.log({
+                                                        liquidationState,
+                                                    });
+
                                                     if (
-                                                        liquidationState.gt(0)
+                                                        liquidationState.eq(1)
                                                     ) {
                                                         const result =
                                                             await positionToValidate;
                                                         return result;
                                                     }
-                                                } catch (err) {
-                                                    return;
-                                                }
+                                                } catch (err) {}
                                             }
                                         );
 
@@ -231,8 +224,16 @@ const handler = async function () {
                         return;
                     }
 
-                    const liquidateMe = uniqueAddressesPositionsToLiquidate.map(
-                        async (liquidablePosition) => {
+                    const planner = new weiroll.Planner();
+                    const testableVM = new ethers.Contract(
+                        process.env.TESTABLE_VM_ADDRESS,
+                        testableVMJSON.abi,
+                        signer
+                    );
+                    const wrVault = weiroll.Contract.createContract(vault);
+
+                    uniqueAddressesPositionsToLiquidate.map(
+                        (liquidablePosition) => {
                             // remove isRaise boolean since not needed in liquidatePosition
                             liquidablePosition.pop();
                             planner.add(
@@ -241,31 +242,26 @@ const handler = async function () {
                                     process.env.LIQUIDATOR_ADDRESS
                                 )
                             );
-
-                            const { commands, state } = planner.plan();
-                            const tx = await testableVM.execute(
-                                commands,
-                                state
-                            );
-                            const receipt = await tx.wait();
-                            const { gasUsed, transactionHash } =
-                                await provider.getTransactionReceipt(tx.hash);
-                            console.info(
-                                uniqueAddressesPositionsToLiquidate.length +
-                                    " * liquidatePosition gas used: ",
-                                gasUsed.toString()
-                            );
-
-                            const blockNumber = await provider.getBlockNumber();
-                            const block = await provider.getBlock(blockNumber);
-                            console.info("blockNumber: ", blockNumber);
-                            console.info("block.timestamp: ", block.timestamp);
-                            console.info("transactionHash: ", transactionHash);
                         }
                     );
 
                     try {
-                        return await Promise.all(liquidateMe);
+                        const { commands, state } = planner.plan();
+                        const tx = await testableVM.execute(commands, state);
+                        const receipt = await tx.wait();
+                        const { gasUsed, transactionHash } =
+                            await provider.getTransactionReceipt(tx.hash);
+                        console.info(
+                            uniqueAddressesPositionsToLiquidate.length +
+                                " * liquidatePosition gas used: ",
+                            gasUsed.toString()
+                        );
+
+                        const blockNumber = await provider.getBlockNumber();
+                        const block = await provider.getBlock(blockNumber);
+                        console.info("blockNumber: ", blockNumber);
+                        console.info("block.timestamp: ", block.timestamp);
+                        console.info("transactionHash: ", transactionHash);
                     } catch (err) {
                         console.error(err.message);
                     }
