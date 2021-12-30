@@ -68,12 +68,15 @@ const handler = async function () {
             ? Number(process.env.FROM_BLOCK)
             : "latest";
         const ipEventFilter = vault.filters.IncreasePosition();
+        const currentBlock = await provider.getBlockNumber();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            5620_0000,
+            currentBlock - 81_000,
             // 56164358,
             "latest"
         );
+
+        console.log({ currentBlock });
 
         const addresses = ipEvents.map((o) => o?.args?.account);
         let uniqueAddresses = ipEvents.map(({ args: { account } }) => {
