@@ -6,6 +6,7 @@ import vaultJSON from "../src/contracts/facets/Vault/VaultFacet.sol/VaultFacet.j
 import testableVMJSON from "../src/contracts/weiroll/TestableVM.sol/TestableVM.json";
 import TokenJSON from "../src/contracts/tokens/Token.sol/Token.json";
 import getPositionQuery from "../src/lib/getPositionQuery";
+import promiseAllSequential from "promise-all-sequential";
 
 const handler = async function () {
     try {
@@ -71,7 +72,7 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            currentBlock - 31500,
+            currentBlock - 34000,
             "latest"
         );
 
@@ -197,47 +198,49 @@ const handler = async function () {
         }
 
         const x = uniqueAddressesPositionsToLiquidate.map(
-            async (liquidablePosition) => {
-                // remove isRaise boolean since not needed in liquidatePosition
-                try {
-                    const planner = new weiroll.Planner();
-                    const testableVM = new ethers.Contract(
-                        process.env.TESTABLE_VM_ADDRESS,
-                        testableVMJSON.abi,
-                        signer
-                    );
-                    const wrVault = weiroll.Contract.createContract(vault);
-                    liquidablePosition.pop();
-                    planner.add(
-                        wrVault.liquidatePosition(
-                            ...liquidablePosition,
-                            process.env.LIQUIDATOR_ADDRESS
-                        )
-                    );
+            (liquidablePosition) => {
+                return async () => {
+                    // remove isRaise boolean since not needed in liquidatePosition
+                    try {
+                        const planner = new weiroll.Planner();
+                        const testableVM = new ethers.Contract(
+                            process.env.TESTABLE_VM_ADDRESS,
+                            testableVMJSON.abi,
+                            signer
+                        );
+                        const wrVault = weiroll.Contract.createContract(vault);
+                        liquidablePosition.pop();
+                        planner.add(
+                            wrVault.liquidatePosition(
+                                ...liquidablePosition,
+                                process.env.LIQUIDATOR_ADDRESS
+                            )
+                        );
 
-                    const { commands, state } = planner.plan();
-                    const tx = await testableVM.execute(commands, state);
-                    const receipt = await tx.wait();
-                    const { gasUsed, transactionHash } =
-                        await provider.getTransactionReceipt(tx.hash);
-                    console.info(
-                        uniqueAddressesPositionsToLiquidate.length +
-                            " * liquidatePosition gas used: ",
-                        gasUsed.toString()
-                    );
+                        const { commands, state } = planner.plan();
+                        const tx = await testableVM.execute(commands, state);
+                        const receipt = await tx.wait();
+                        const { gasUsed, transactionHash } =
+                            await provider.getTransactionReceipt(tx.hash);
+                        console.info(
+                            uniqueAddressesPositionsToLiquidate.length +
+                                " * liquidatePosition gas used: ",
+                            gasUsed.toString()
+                        );
 
-                    const blockNumber = await provider.getBlockNumber();
-                    const block = await provider.getBlock(blockNumber);
-                    console.info("blockNumber: ", blockNumber);
-                    console.info("block.timestamp: ", block.timestamp);
-                    console.info("transactionHash: ", transactionHash);
-                } catch (err) {
-                    console.error(err.message);
-                }
+                        const blockNumber = await provider.getBlockNumber();
+                        const block = await provider.getBlock(blockNumber);
+                        console.info("blockNumber: ", blockNumber);
+                        console.info("block.timestamp: ", block.timestamp);
+                        console.info("transactionHash: ", transactionHash);
+                    } catch (err) {
+                        console.error(err.message);
+                    }
+                };
             }
         );
 
-        await Promise.allSettled(x);
+        await promiseAllSequential(x);
 
         // Execute weiroll plan with deployed VM with user2 who is the liquidation fee receiver
     } catch (err) {
