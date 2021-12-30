@@ -73,7 +73,8 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            currentBlock - 200000,
+            // 56_334_818
+            currentBlock - 1_000_000,
             "latest"
         );
 
@@ -89,7 +90,7 @@ const handler = async function () {
 
         await from(uniqueAddresses)
             .pipe(
-                bufferCount(15),
+                bufferCount(25),
                 concatMap((txn) => of(txn).pipe(delay(10000))),
                 tap(async (chunk) => {
                     try {
@@ -196,7 +197,7 @@ const handler = async function () {
 
                                                         if (
                                                             liquidationState.eq(
-                                                                1
+                                                                2
                                                             )
                                                         ) {
                                                             console.log({
