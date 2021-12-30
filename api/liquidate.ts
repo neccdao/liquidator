@@ -73,7 +73,7 @@ const handler = async function () {
         const ipEventFilter = vault.filters.IncreasePosition();
         const ipEvents = await vault.queryFilter(
             ipEventFilter,
-            currentBlock - 60000,
+            currentBlock - 200000,
             "latest"
         );
 
@@ -90,7 +90,7 @@ const handler = async function () {
         await from(uniqueAddresses)
             .pipe(
                 bufferCount(15),
-                concatMap((txn) => of(txn).pipe(delay(8000))),
+                concatMap((txn) => of(txn).pipe(delay(10000))),
                 tap(async (chunk) => {
                     try {
                         const planner = new weiroll.Planner();
@@ -194,14 +194,14 @@ const handler = async function () {
                                                             ...positionToValidate
                                                         );
 
-                                                        console.log({
-                                                            liquidationState,
-                                                        });
                                                         if (
-                                                            liquidationState.gt(
-                                                                0
+                                                            liquidationState.eq(
+                                                                1
                                                             )
                                                         ) {
+                                                            console.log({
+                                                                liquidationState,
+                                                            });
                                                             const result =
                                                                 await positionToValidate;
                                                             return result;
