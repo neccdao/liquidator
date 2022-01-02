@@ -23,21 +23,6 @@ const main = async () => {
         console.log({ intervalPeriod });
         // First invoke the handler
         await handler();
-        const liquidatorTimer = setInterval(async () => {
-            await handler();
-        }, Number(intervalPeriod));
-        // TODO: Change for production :))
-
-        ON_DEATH({
-            uncaughtException: true,
-        })((signal, deathErr) => {
-            console.error(`*** SIGNAL: ${signal} ***`);
-            console.error(`*** deathErr: ${deathErr} ***`);
-
-            clearInterval(liquidatorTimer);
-
-            process.exit(0);
-        });
     } catch (err) {
         console.error("Error occured in index.ts:main");
         console.error(err);
