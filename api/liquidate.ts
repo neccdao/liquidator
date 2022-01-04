@@ -81,7 +81,10 @@ const handler = async function () {
             ? Number(process.env.FROM_BLOCK)
             : "latest";
 
-        await interval(40000)
+        const intervalPeriod = Number(process.env.INTERVAL_PERIOD || 20000);
+        console.log({ intervalPeriod });
+
+        await interval(intervalPeriod)
             .pipe(
                 mergeMap(async () => {
                     console.log("w00t");
@@ -89,7 +92,7 @@ const handler = async function () {
                     const ipEvents = await vault.queryFilter(
                         ipEventFilter,
                         // 56_334_818
-                        currentBlock - 300_000,
+                        currentBlock - 500_000,
                         "latest"
                     );
 
@@ -109,7 +112,7 @@ const handler = async function () {
                 mergeMap((uniqueAddresses) =>
                     from(uniqueAddresses).pipe(
                         bufferCount(25),
-                        concatMap((txn) => of(txn).pipe(delay(5000))),
+                        concatMap((txn) => of(txn).pipe(delay(6000))),
                         tap(async (chunk) => {
                             console.log(chunk[0]);
                             try {
@@ -228,7 +231,7 @@ const handler = async function () {
 
                                                                 if (
                                                                     liquidationState.eq(
-                                                                        1
+                                                                        2
                                                                     )
                                                                 ) {
                                                                     console.log(
